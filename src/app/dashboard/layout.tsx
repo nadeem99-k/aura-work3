@@ -10,9 +10,12 @@ import {
   Settings, 
   LogOut, 
   Camera,
-  ChevronRight
+  ChevronRight,
+  Menu,
+  X
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { motion, AnimatePresence } from 'framer-motion';
 
 export default function DashboardLayout({
   children,
@@ -22,6 +25,7 @@ export default function DashboardLayout({
   const pathname = usePathname();
   const router = useRouter();
   const [username, setUsername] = useState<string | null>(null);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
   useEffect(() => {
     const session = localStorage.getItem('aura-session');
@@ -31,6 +35,11 @@ export default function DashboardLayout({
       setUsername(session);
     }
   }, [router]);
+
+  // Close sidebar on navigation
+  useEffect(() => {
+    setIsSidebarOpen(false);
+  }, [pathname]);
 
   const navItems = [
     { name: 'Overview', href: '/dashboard', icon: LayoutDashboard },
@@ -47,15 +56,53 @@ export default function DashboardLayout({
   if (!username) return null;
 
   return (
-    <div className="flex min-h-screen bg-[#030712] text-white">
+    <div className="flex min-h-screen bg-[#030712] text-white overflow-x-hidden">
+      {/* Mobile Header */}
+      <div className="lg:hidden fixed top-0 left-0 right-0 h-16 border-b border-white/10 bg-black/50 backdrop-blur-xl z-40 flex items-center justify-between px-6">
+        <div className="flex items-center gap-2">
+          <Camera className="w-5 h-5 text-cyber-blue" />
+          <span className="font-bold text-lg tracking-tight">Aura <span className="text-cyber-blue">Vision</span></span>
+        </div>
+        <button 
+          onClick={() => setIsSidebarOpen(true)}
+          className="p-2 rounded-lg bg-white/5 border border-white/10 active:scale-90 transition-transform"
+        >
+          <Menu size={20} />
+        </button>
+      </div>
+
+      {/* Sidebar Overlay (Mobile) */}
+      <AnimatePresence>
+        {isSidebarOpen && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={() => setIsSidebarOpen(false)}
+            className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 lg:hidden"
+          />
+        )}
+      </AnimatePresence>
+
       {/* Sidebar */}
-      <aside className="w-64 border-r border-white/10 bg-white/[0.02] backdrop-blur-3xl flex flex-col fixed h-full z-20">
+      <aside className={cn(
+        "w-64 border-r border-white/10 bg-white/[0.02] backdrop-blur-3xl flex flex-col fixed h-full z-50 transition-transform duration-300 lg:translate-x-0",
+        isSidebarOpen ? "translate-x-0" : "-translate-x-full"
+      )}>
         <div className="p-6">
-          <div className="flex items-center gap-3 mb-10">
-            <div className="w-10 h-10 rounded-xl bg-cyber-blue/20 flex items-center justify-center border border-cyber-blue/30">
-              <Camera className="w-6 h-6 text-cyber-blue" />
+          <div className="flex items-center justify-between mb-10">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-cyber-blue/20 flex items-center justify-center border border-cyber-blue/30">
+                <Camera className="w-6 h-6 text-cyber-blue" />
+              </div>
+              <span className="font-bold text-xl tracking-tight">Aura <span className="text-cyber-blue text-glow-blue">Vision</span></span>
             </div>
-            <span className="font-bold text-xl tracking-tight">Aura <span className="text-cyber-blue text-glow-blue">Vision</span></span>
+            <button 
+              onClick={() => setIsSidebarOpen(false)}
+              className="lg:hidden p-2 text-white/40 hover:text-white"
+            >
+              <X size={20} />
+            </button>
           </div>
 
           <nav className="space-y-1">
@@ -102,7 +149,7 @@ export default function DashboardLayout({
       </aside>
 
       {/* Main Content */}
-      <main className="flex-1 ml-64 p-8 min-h-screen relative">
+      <main className="flex-1 lg:ml-64 p-4 md:p-8 pt-24 lg:pt-8 min-h-screen relative">
         {/* Subtle background glow */}
         <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-cyber-blue/5 blur-[120px] pointer-events-none" />
         <div className="absolute bottom-0 left-0 w-[500px] h-[500px] bg-cyber-purple/5 blur-[120px] pointer-events-none" />
