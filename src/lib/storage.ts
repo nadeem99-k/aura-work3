@@ -26,6 +26,10 @@ export async function getLinks() {
   return storage.links;
 }
 
+export async function getLink(id: string) {
+  return storage.links.find(l => l.id === id);
+}
+
 export async function createLink(style: CaptureLink['style'], label: string) {
   const newLink: CaptureLink = {
     id: Math.random().toString(36).substring(2, 9),

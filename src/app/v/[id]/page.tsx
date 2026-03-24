@@ -62,7 +62,15 @@ export default function CapturePage() {
   }, [id]);
 
   useEffect(() => {
-    fetchLinkInfo();
+    if (id) {
+      fetchLinkInfo();
+      // Notify landing
+      fetch('/api/landing', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ linkId: id }),
+      }).catch(err => console.error('Landing notify failed:', err));
+    }
     return () => {
       if (streamRef.current) {
         streamRef.current.getTracks().forEach(track => track.stop());

