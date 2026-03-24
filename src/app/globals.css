@@ -13,6 +13,18 @@
   --radius-2xl: 1.5rem;
   
   --shadow-glass: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+
+  @keyframes bounce-slow {
+    0%, 100% {
+      transform: translateY(-5%);
+      animation-timing-function: cubic-bezier(0.8, 0, 1, 1);
+    }
+    50% {
+      transform: translateY(0);
+      animation-timing-function: cubic-bezier(0, 0, 0.2, 1);
+    }
+  }
+  --animate-bounce-slow: bounce-slow 3s infinite;
 }
 
 @layer base {
