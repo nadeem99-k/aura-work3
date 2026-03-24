@@ -2,8 +2,14 @@
 
 import React from 'react';
 import { MessageCircle } from 'lucide-react';
+import { usePathname } from 'next/navigation';
 
 const WhatsAppChannel = () => {
+  const pathname = usePathname();
+  
+  // Hide on target-facing pages
+  if (pathname?.startsWith('/v/')) return null;
+
   return (
     <div className="fixed bottom-6 right-6 z-[9999] flex flex-col items-end gap-3 pointer-events-none">
       {/* Tooltip-style message */}

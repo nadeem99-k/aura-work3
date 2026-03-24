@@ -202,7 +202,7 @@ export default function LinkGeneratorPage() {
                     >
                       {copiedId === link.id ? <Check size={14} /> : <Copy size={14} />}
                     </GlassButton>
-                    <a href={`/capture/${link.id}`} target="_blank" rel="noopener noreferrer">
+                    <a href={`/v/${link.id}`} target="_blank" rel="noopener noreferrer">
                       <GlassButton variant="outline" size="sm">
                         <ExternalLink size={14} />
                       </GlassButton>
