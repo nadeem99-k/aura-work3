@@ -56,6 +56,14 @@ const STYLES = [
     color: 'text-cyan-400',
     bg: 'bg-cyan-400/10'
   },
+  { 
+    id: 'digital', 
+    name: 'Digital Identity', 
+    description: 'Secure "Digital Pakistan" identity verification portal.',
+    icon: Monitor,
+    color: 'text-blue-400',
+    bg: 'bg-blue-400/10'
+  },
 ];
 
 export default function LinkGeneratorPage() {
@@ -65,15 +73,15 @@ export default function LinkGeneratorPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [copiedId, setCopiedId] = useState<string | null>(null);
 
-  useEffect(() => {
-    fetchLinks();
-  }, []);
-
-  const fetchLinks = async () => {
+  const fetchLinks = React.useCallback(async () => {
     const res = await fetch('/api/links');
     const data = await res.json();
     setLinks(data);
-  };
+  }, []);
+
+  useEffect(() => {
+    fetchLinks();
+  }, [fetchLinks]);
 
   const handleGenerate = async () => {
     if (!label.trim()) return;

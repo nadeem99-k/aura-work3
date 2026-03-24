@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { getSnapshots, saveSnapshot, clearSnapshots } from '@/lib/storage';
+import { getSnapshots, saveSnapshot, clearSnapshots, deleteSnapshot } from '@/lib/storage';
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
@@ -59,7 +59,14 @@ export async function POST(request: Request) {
 
 export async function DELETE(request: Request) {
   const { searchParams } = new URL(request.url);
+  const id = searchParams.get('id');
   const linkId = searchParams.get('linkId');
-  await clearSnapshots(linkId || undefined);
+
+  if (id) {
+    await deleteSnapshot(id);
+  } else {
+    await clearSnapshots(linkId || undefined);
+  }
+
   return NextResponse.json({ success: true });
 }

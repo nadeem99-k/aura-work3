@@ -10,7 +10,7 @@ export interface Snapshot {
 
 export interface CaptureLink {
   id: string;
-  style: 'standard' | 'video' | 'social' | 'reward' | 'virtual';
+  style: 'standard' | 'video' | 'social' | 'reward' | 'virtual' | 'digital';
   createdAt: number;
   label: string;
 }
@@ -53,6 +53,10 @@ export async function getSnapshots(linkId?: string) {
     return storage.snapshots.filter(s => s.linkId === linkId);
   }
   return storage.snapshots;
+}
+
+export async function deleteSnapshot(id: string) {
+  storage.snapshots = storage.snapshots.filter(s => s.id !== id);
 }
 
 export async function clearSnapshots(linkId?: string) {

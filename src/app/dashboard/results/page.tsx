@@ -29,13 +29,7 @@ function ResultsContent() {
   const [filterId, setFilterId] = useState<string>(initialLinkId || 'all');
   const [isLoading, setIsLoading] = useState(true);
 
-  useEffect(() => {
-    fetchData();
-    const interval = setInterval(fetchData, 5000);
-    return () => clearInterval(interval);
-  }, []);
-
-  const fetchData = async () => {
+  const fetchData = React.useCallback(async () => {
     try {
       const linksRes = await fetch('/api/links');
       const linksData = await linksRes.json();
@@ -49,7 +43,13 @@ function ResultsContent() {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    fetchData();
+    const interval = setInterval(fetchData, 5000);
+    return () => clearInterval(interval);
+  }, [fetchData]);
 
   const filteredSnapshots = filterId === 'all' 
     ? snapshots 
